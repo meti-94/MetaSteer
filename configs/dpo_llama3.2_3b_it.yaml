@@ -2,9 +2,8 @@ experiment:
   name: dpo-llama3.2-3b-it
   seed: 42
   results_dir: results
-  report_to:
-    - wandb
-  wandb_entity: mahdi-jafari-unsw
+  report_to: []
+  # Optional W&B: set report_to: [wandb] and optionally wandb_entity / wandb_project
   wandb_project: DPO_Steering
 
 model:

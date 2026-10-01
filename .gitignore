@@ -8,12 +8,22 @@ venv/
 # Data & caches (regenerate / download)
 data_raw/data/
 training_ready_data/data/
-checkpoints/
 adapters/
 results/
 wandb/
 .cache/
 *.jsonl
+
+# Training debris under checkpoints/ (keep shipped final adapters)
+checkpoints/**/checkpoint-*/
+checkpoints/**/merged-*/
+checkpoints/**/runs/
+checkpoints/**/training_args.bin
+checkpoints/**/optimizer.pt
+checkpoints/**/rng_state.pth
+checkpoints/**/scheduler.pt
+checkpoints/**/trainer_state.json
+checkpoints/**/README.md
 
 # OS / editor
 .DS_Store

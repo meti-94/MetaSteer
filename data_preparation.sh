@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # End-to-end data pipeline for DPO meta-learning:
-#   1. Download all raw datasets (concept16k v1/v2 + SteerBoost)
+#   1. Download raw Concept16k v1/v2 datasets
 #   2. Convert them into training-ready preference JSONL
 #      under training_ready_data/data/
 #   3. Delete all raw data to reclaim disk space
@@ -20,12 +20,10 @@ OUT_DIR="$PREP_DIR/data"
 
 echo "=== [1/3] Downloading raw data ==="
 python "$RAW_DIR/download.py"
-bash "$RAW_DIR/download.sh"
 
 echo "=== [2/3] Preparing training-ready data ==="
 python "$PREP_DIR/concept16k_v1.py"
 python "$PREP_DIR/concept16k_v2.py"
-python "$PREP_DIR/steerBoost.py"
 
 echo "=== [3/3] Cleaning up raw data ==="
 if [[ "${KEEP_RAW:-0}" == "1" ]]; then
@@ -36,9 +34,9 @@ else
         find "$RAW_DIR/data" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
     fi
     # Drop HF cache copies of the raw dataset repos as well.
+    HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
     for repo in datasets--pyvene--axbench-concept16k \
-                datasets--pyvene--axbench-concept16k_v2 \
-                datasets--Fcr09--SteerBoost-data; do
+                datasets--pyvene--axbench-concept16k_v2; do
         rm -rf "$HF_HOME/hub/$repo"
     done
     echo "Raw data deleted."
