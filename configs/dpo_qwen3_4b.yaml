@@ -1,0 +1,111 @@
+experiment:
+  name: dpo-qwen3-4b
+  seed: 42
+  results_dir: results
+  report_to:
+    - wandb
+  wandb_entity: mahdi-jafari-unsw
+  wandb_project: DPO_Steering
+
+model:
+  name_or_path: Qwen/Qwen3-4B
+  dtype: auto
+  # Qwen3 ships a native chat template; trust_remote_code is not required.
+  trust_remote_code: false
+
+data:
+  train_path: training_ready_data/data/concept16k_v1_train.jsonl
+  validation_path: training_ready_data/data/concept16k_v1_valid.jsonl
+  test_path: training_ready_data/data/concept16k_v1_test.jsonl
+  format: json
+  dataset_name: null
+  dataset_config: null
+  train_split: train
+  validation_split: validation
+  test_split: test
+  columns:
+    prompt: prompt
+    chosen: chosen
+    rejected: rejected
+  validation_max_samples: 500
+  test_max_samples: 500
+
+training:
+  output_dir: ./checkpoints/dpo-qwen3-4b
+
+  epochs: 2
+  # Effective batch similar to 0.6B run (16 * 8 = 128).
+  batch_size: 16
+  gradient_accumulation: 8
+
+  # Save a checkpoint every 400 optimizer steps
+  save_nsteps: 400
+
+  validation_nsteps: 200
+  logging_steps: 20
+
+  learning_rate: 1.0e-5
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  beta: 0.05
+
+  # Preference pairs are short; keep DPO packing modest.
+  max_length: 512
+  eval_batch_size: 16
+
+  save_total_limit: 1
+  gradient_checkpointing: true
+  resume_from_checkpoint: null
+
+lora:
+  enabled: true
+  rank: 16
+  alpha: 16
+  dropout: 0.1
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+
+inference:
+  system_prompt: You are a helpful assistant.
+  # Qwen3 thinking mode (default in chat template). Leave true so the model
+  # emits <think>...</think> before the final answer.
+  enable_thinking: true
+  sampling:
+    # Thinking-mode defaults from Qwen3 docs (avoid greedy / temperature=0).
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    # Long budget so reasoning can finish before the answer is truncated.
+    # Official upper guidance is 32768; 8192 is usually enough for steering evals.
+    max_tokens: 8192
+    repetition_penalty: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.8
+    # Must cover prompt + thinking + answer (native Qwen3 context is 32k).
+    max_model_len: 16384
+
+external_validation:
+  enabled: false
+  every_n_steps: 400
+  script: external_validation.py
+  cuda_visible_devices: "1"
+  timeout_seconds: 1800
+  fail_training_on_error: false
+  prompts:
+    - Write one sentence explaining why preference learning is useful.
+    - role: user
+      content: Give a concise and helpful greeting.
+  sampling:
+    temperature: 0.6
+    top_p: 0.95
+    top_k: 20
+    max_tokens: 4096
+  vllm:
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.8
+    max_model_len: 8192
+    trust_remote_code: false

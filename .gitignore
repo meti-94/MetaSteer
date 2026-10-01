@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Data & caches (regenerate / download)
+data_raw/data/
+training_ready_data/data/
+checkpoints/
+adapters/
+results/
+wandb/
+.cache/
+*.jsonl
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/

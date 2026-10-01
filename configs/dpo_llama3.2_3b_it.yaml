@@ -1,0 +1,99 @@
+experiment:
+  name: dpo-llama3.2-3b-it
+  seed: 42
+  results_dir: results
+  report_to:
+    - wandb
+  wandb_entity: mahdi-jafari-unsw
+  wandb_project: DPO_Steering
+
+model:
+  name_or_path: meta-llama/Llama-3.2-3B-Instruct
+  dtype: auto
+  trust_remote_code: false
+
+data:
+  train_path: training_ready_data/data/concept16k_v1_train.jsonl
+  validation_path: training_ready_data/data/concept16k_v1_valid.jsonl
+  test_path: training_ready_data/data/concept16k_v1_test.jsonl
+  format: json
+  dataset_name: null
+  dataset_config: null
+  train_split: train
+  validation_split: validation
+  test_split: test
+  columns:
+    prompt: prompt
+    chosen: chosen
+    rejected: rejected
+  validation_max_samples: 500
+  test_max_samples: 500
+
+training:
+  output_dir: ./checkpoints/dpo-llama3.2-3b-it
+
+  epochs: 2
+  batch_size: 16
+  gradient_accumulation: 8
+
+  # Save a checkpoint every 400 optimizer steps
+  save_nsteps: 400
+
+  validation_nsteps: 200
+  logging_steps: 20
+
+  learning_rate: 1.0e-5
+  warmup_ratio: 0.03
+  weight_decay: 0.0
+  beta: 0.05
+
+  max_length: 256
+  eval_batch_size: 16
+
+  save_total_limit: 1
+  gradient_checkpointing: true
+  resume_from_checkpoint: null
+
+lora:
+  enabled: true
+  rank: 16
+  alpha: 16
+  dropout: 0.1
+  target_modules:
+    - q_proj
+    - k_proj
+    - v_proj
+    - o_proj
+
+inference:
+  system_prompt: You are a helpful assistant.
+  sampling:
+    temperature: 0.0
+    top_p: 0.9
+    max_tokens: 512
+    repetition_penalty: 1.0
+  vllm:
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.8
+    max_model_len: 512
+
+external_validation:
+  enabled: false
+  every_n_steps: 400
+  script: external_validation.py
+  cuda_visible_devices: "1"
+  timeout_seconds: 1800
+  fail_training_on_error: false
+  prompts:
+    - Write one sentence explaining why preference learning is useful.
+    - role: user
+      content: Give a concise and helpful greeting.
+  sampling:
+    temperature: 0.0
+    top_p: 1.0
+    max_tokens: 128
+  vllm:
+    tensor_parallel_size: 1
+    gpu_memory_utilization: 0.8
+    max_model_len: 512
+    trust_remote_code: false
